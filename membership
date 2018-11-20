@@ -1,0 +1,32 @@
+
+-- 付费信息
+select t.uid,a.pay_time,b.pay_mall,c.pay90,c.pay90_cnt,c.pay90_last,t.login_cnt,t.login_time,t.login_last from 
+
+(select uid,count(ticket) as login_cnt,sum(UNIX_TIMESTAMP(dt)-UNIX_TIMESTAMP(logintime))/3600 login_time ,max(dt) login_last from account_logout
+where   UNIX_TIMESTAMP(dt)-UNIX_TIMESTAMP(logintime) > 0 
+ and UNIX_TIMESTAMP(dt)-UNIX_TIMESTAMP(logintime) < 24*3600
+ and UNIX_TIMESTAMP(dt) >= UNIX_TIMESTAMP(date_sub(current_date , 90))
+group by uid) t
+ 
+ left join 
+(select user_id,sum(charge_money) pay_time from charge where  charge_channel != 'ptgold' and charge_channel != 'gift' and log_type = 1 and charge_money > 0 
+ group by user_id
+ )a 
+ on t.uid = a.user_id 
+ 
+ left join 
+(select user_id, sum(charge_money) pay_mall from charge where  charge_channel != 'ptgold' and charge_channel != 'gift' and log_type = 2 and charge_money > 0 
+ group by user_id) b
+on t.uid = b.user_id
+
+ left join 
+(select user_id, sum(charge_money) pay90,count(charge_uid) pay09_cnt,max(dt) pay90_last from charge where  charge_channel != 'ptgold' and charge_channel != 'gift' and charge_money > 0 
+and UNIX_TIMESTAMP(dt) >= UNIX_TIMESTAMP(date_sub(current_date , 90))
+group by user_id
+ ) c
+on t.uid = c.user_id
+
+
+
+
+
